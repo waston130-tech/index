@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>長文處理工具</title>
+    <title>長文煉金術 v2.1</title>
     <style>
         body { 
             font-family: "Microsoft JhengHei", sans-serif; 
@@ -36,31 +36,31 @@
         label { display: block; margin-bottom: 5px; color: #aaa; font-size: 14px; }
         input[type="text"] {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background-color: #2c2c2c;
             border: 1px solid #444;
             color: white;
             border-radius: 5px;
             font-size: 16px;
+            box-sizing: border-box;
         }
         .btn-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
         }
         button {
-            padding: 12px 20px;
+            padding: 12px 24px;
             cursor: pointer;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             font-weight: bold;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
+            transition: 0.2s;
+            font-size: 15px;
         }
         .copy-btn { background-color: #4caf50; color: white; }
-        .reader-btn { background-color: #2196f3; color: white; }
-        .evernote-btn { background-color: #00a82d; color: white; }
+        .dual-btn { background-color: #2196f3; color: white; }
+        .save-btn { background-color: #ff9800; color: white; }
         button:hover { opacity: 0.8; transform: translateY(-2px); }
         
         textarea { 
@@ -74,68 +74,71 @@
             border-radius: 10px;
             box-sizing: border-box;
             font-family: inherit;
+            resize: vertical;
         }
     </style>
 </head>
 <body>
     <div id="counter">總字數：0</div>
     
-    <h2>華生知識煉金術：長文轉化台</h2>
+    <h2>華生知識煉金術：長文轉化台 v2.1</h2>
     
     <div class="control-panel">
         <div class="input-group">
-            <label>郵件主旨 (Email Subject)</label>
-            <input type="text" id="subjectInput" placeholder="例如：【原始長文】提摩太前書 4:12 @靈修筆記 #Raw">
+            <label>郵件主旨 (例如：【原始長文】主題 @靈修筆記 #Raw)</label>
+            <input type="text" id="subjectInput" placeholder="請在此輸入主旨...">
         </div>
         
         <div class="btn-group">
             <button class="copy-btn" onclick="copyText()">📋 複製文字</button>
-            <button class="reader-btn" onclick="sendToReader()">📧 寄給 Reader</button>
-            <button class="evernote-btn" onclick="sendToEvernote()">📧 寄給 Evernote</button>
+            <button class="dual-btn" onclick="sendToBoth()">📧 一鍵雙寄 (Reader & Evernote)</button>
+            <button class="save-btn" onclick="saveAsTxt()">💾 存成 TXT 檔案</button>
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="在此貼上 Gemini 轉化後的長文..."></textarea>
+    <textarea id="textInput" placeholder="在此貼上 Gemini 轉化後的長文..." oninput="updateCount()"></textarea>
 
     <script>
         const input = document.getElementById('textInput');
         const counter = document.getElementById('counter');
         const subjectInput = document.getElementById('subjectInput');
 
-        // 已為你寫死收件信箱
+        // 已設定為你的專屬地址
         const READER_EMAIL = "waston@library.readwise.io";
         const EVERNOTE_EMAIL = "waston130.454d0b8@m.evernote.com";
 
         function updateCount() {
-            const selectedText = input.value.substring(input.selectionStart, input.selectionEnd);
-            if (selectedText.length > 0) {
-                counter.innerText = '選取字數：' + selectedText.length;
-            } else {
-                counter.innerText = '總字數：' + input.value.length;
-            }
+            counter.innerText = '總字數：' + input.value.length;
         }
 
         function copyText() {
             input.select();
             document.execCommand('copy');
-            alert('文字已複製！');
+            alert('文字已成功複製！');
         }
 
-        function sendToReader() {
-            const subject = subjectInput.value || "【原始長文】未命名";
+        function saveAsTxt() {
+            const text = input.value;
+            if(!text) { alert("請先貼入內容"); return; }
+            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+            const anchor = document.createElement("a");
+            const fileName = (subjectInput.value || "未命名筆記") + ".txt";
+            anchor.download = fileName;
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.click();
+            window.URL.revokeObjectURL(anchor.href);
+        }
+
+        function sendToBoth() {
+            const subject = encodeURIComponent(subjectInput.value || "【原始長文】未命名");
             const body = encodeURIComponent(input.value);
-            window.location.href = `mailto:${READER_EMAIL}?subject=${encodeURIComponent(subject)}&body=${body}`;
+            
+            // 嘗試將 Reader 放在收件人，Evernote 放在副本 (CC)
+            // 這是最相容於各種郵件軟體的寫法
+            const mailtoLink = `mailto:${READER_EMAIL}?cc=${EVERNOTE_EMAIL}&subject=${subject}&body=${body}`;
+            
+            window.location.href = mailtoLink;
         }
-
-        function sendToEvernote() {
-            const subject = subjectInput.value || "【原始長文】未命名";
-            const body = encodeURIComponent(input.value);
-            window.location.href = `mailto:${EVERNOTE_EMAIL}?subject=${encodeURIComponent(subject)}&body=${body}`;
-        }
-
-        input.addEventListener('mouseup', updateCount);
-        input.addEventListener('keyup', updateCount);
-        input.addEventListener('input', updateCount);
     </script>
 </body>
 </html>
