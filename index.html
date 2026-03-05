@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>長文煉金術 v2.1</title>
+    <title>Watson 專屬：長文煉金術 v2.2.1</title>
     <style>
         body { 
             font-family: "Microsoft JhengHei", sans-serif; 
@@ -81,7 +81,7 @@
 <body>
     <div id="counter">總字數：0</div>
     
-    <h2>華生知識煉金術：長文轉化台 v2.1</h2>
+    <h2>Watson 知識煉金術：長文轉化台 v2.2.1</h2>
     
     <div class="control-panel">
         <div class="input-group">
@@ -103,7 +103,6 @@
         const counter = document.getElementById('counter');
         const subjectInput = document.getElementById('subjectInput');
 
-        // 已設定為你的專屬地址
         const READER_EMAIL = "waston@library.readwise.io";
         const EVERNOTE_EMAIL = "waston130.454d0b8@m.evernote.com";
 
@@ -122,7 +121,7 @@
             if(!text) { alert("請先貼入內容"); return; }
             const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
             const anchor = document.createElement("a");
-            const fileName = (subjectInput.value || "未命名筆記") + ".txt";
+            const fileName = (subjectInput.value || "Watson研讀筆記") + ".txt";
             anchor.download = fileName;
             anchor.href = window.URL.createObjectURL(blob);
             anchor.click();
@@ -132,11 +131,8 @@
         function sendToBoth() {
             const subject = encodeURIComponent(subjectInput.value || "【原始長文】未命名");
             const body = encodeURIComponent(input.value);
-            
-            // 嘗試將 Reader 放在收件人，Evernote 放在副本 (CC)
-            // 這是最相容於各種郵件軟體的寫法
-            const mailtoLink = `mailto:${READER_EMAIL}?cc=${EVERNOTE_EMAIL}&subject=${subject}&body=${body}`;
-            
+            // 使用 Outlook 標準分號格式
+            const mailtoLink = `mailto:${READER_EMAIL};${EVERNOTE_EMAIL}?subject=${subject}&body=${body}`;
             window.location.href = mailtoLink;
         }
     </script>
