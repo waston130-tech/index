@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Watson 專屬：長文煉金術 v2.2.1</title>
+    <title>Watson 專屬：長文煉金術 v2.2.2</title>
     <style>
         body { 
             font-family: "Microsoft JhengHei", sans-serif; 
@@ -22,6 +22,8 @@
             border-radius: 8px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
             z-index: 100;
+            min-width: 120px;
+            text-align: center;
         }
         .control-panel {
             margin-bottom: 20px;
@@ -81,7 +83,7 @@
 <body>
     <div id="counter">總字數：0</div>
     
-    <h2>Watson 知識煉金術：長文轉化台 v2.2.1</h2>
+    <h2>Watson 知識煉金術：長文轉化台 v2.2.2</h2>
     
     <div class="control-panel">
         <div class="input-group">
@@ -96,7 +98,7 @@
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="在此貼上 Gemini 轉化後的長文..." oninput="updateCount()"></textarea>
+    <textarea id="textInput" placeholder="在此貼上 Gemini 轉化後的長文..."></textarea>
 
     <script>
         const input = document.getElementById('textInput');
@@ -107,7 +109,16 @@
         const EVERNOTE_EMAIL = "waston130.454d0b8@m.evernote.com";
 
         function updateCount() {
-            counter.innerText = '總字數：' + input.value.length;
+            const totalLength = input.value.length;
+            const selectedText = input.value.substring(input.selectionStart, input.selectionEnd);
+            
+            if (selectedText.length > 0) {
+                counter.innerText = '選取字數：' + selectedText.length;
+                counter.style.background = '#00e676'; // 選取時變綠色提醒
+            } else {
+                counter.innerText = '總字數：' + totalLength;
+                counter.style.background = '#fbc02d'; // 平時維持黃色
+            }
         }
 
         function copyText() {
@@ -131,10 +142,15 @@
         function sendToBoth() {
             const subject = encodeURIComponent(subjectInput.value || "【原始長文】未命名");
             const body = encodeURIComponent(input.value);
-            // 使用 Outlook 標準分號格式
             const mailtoLink = `mailto:${READER_EMAIL};${EVERNOTE_EMAIL}?subject=${subject}&body=${body}`;
             window.location.href = mailtoLink;
         }
+
+        // 全面監聽各種滑鼠與鍵盤動作，確保計數即時觸發
+        input.addEventListener('input', updateCount);
+        input.addEventListener('mouseup', updateCount);
+        input.addEventListener('keyup', updateCount);
+        input.addEventListener('mousemove', (e) => { if (e.buttons === 1) updateCount(); });
     </script>
 </body>
 </html>
