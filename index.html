@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Watson 專屬：長文煉金術 v2.2.5</title>
+    <title>Watson 專屬：長文煉金術 v3.0</title>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background-color: #121212; color: #e0e0e0; line-height: 1.6; }
         #counter { position: fixed; top: 20px; right: 20px; background: #fbc02d; color: #000; padding: 10px 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; min-width: 120px; text-align: center; }
@@ -11,7 +11,7 @@
         .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 15px; }
         button { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; font-size: 15px; }
         .copy-btn { background-color: #4caf50; color: white; }
-        .dual-btn { background-color: #2196f3; color: white; }
+        .gmail-btn { background-color: #ea4335; color: white; }
         .save-btn { background-color: #ff9800; color: white; }
         button:hover { opacity: 0.8; transform: translateY(-2px); }
         textarea { width: 100%; height: 60vh; padding: 15px; font-size: 18px; background-color: #1e1e1e; color: #ffffff; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; font-family: inherit; margin-top: 10px; }
@@ -19,13 +19,13 @@
 </head>
 <body>
     <div id="counter">總字數：0</div>
-    <h2>Watson 知識煉金術 v2.2.5</h2>
+    <h2>Watson 知識煉金術 v3.0</h2>
     <div class="control-panel">
         <label style="color:#aaa; font-size:14px;">郵件主旨 (例如：【原始長文】主題 @靈修筆記 #Raw)</label>
         <input type="text" id="subjectInput" placeholder="請在此輸入主旨...">
         <div class="btn-group">
-            <button class="copy-btn" onclick="copyText(false)">📋 複製文字</button>
-            <button class="dual-btn" onclick="sendToOutlook()">📧 Outlook 雙寄 (完美防亂碼)</button>
+            <button class="copy-btn" onclick="copyText()">📋 複製文字</button>
+            <button class="gmail-btn" onclick="sendViaGmailAPI()">📧 Gmail 雲端直寄 (保證不亂碼)</button>
             <button class="save-btn" onclick="saveAsTxt()">💾 存成 TXT</button>
         </div>
     </div>
@@ -50,11 +50,10 @@
             }
         }
 
-        function copyText(isSilent = false) {
+        function copyText() {
             input.select();
             document.execCommand('copy');
-            if(!isSilent) alert('文字已成功複製！');
-            // 取消全選狀態，讓視覺比較乾淨
+            alert('文字已成功複製！');
             window.getSelection().removeAllRanges();
         }
 
@@ -67,23 +66,18 @@
             anchor.click();
         }
 
-        function sendToOutlook() {
-            if(!input.value) { alert("請先貼入要寄送的內容喔！"); return; }
+        // 核心修正：使用 Gmail Web URL API，徹底繞過 Outlook 與系統底層
+        function sendViaGmailAPI() {
+            if(!input.value) { alert("請先貼入內容喔！"); return; }
             
-            // 1. 背景靜默複製全文
-            copyText(true); 
-            
-            // 2. 準備主旨
+            const to = encodeURIComponent(READER_EMAIL + "," + EVERNOTE_EMAIL);
             const subject = encodeURIComponent(subjectInput.value || "【研讀筆記】未命名");
+            const body = encodeURIComponent(input.value);
             
-            // 3. 呼叫 Outlook，徹底捨棄 body 參數，避開編碼崩潰
-            const mailtoLink = `mailto:${READER_EMAIL};${EVERNOTE_EMAIL}?subject=${subject}`;
-            window.location.href = mailtoLink;
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`;
             
-            // 4. 提醒 Watson 貼上
-            setTimeout(() => {
-                alert("✅ 內容已自動複製！\n\n請在跳出的 Outlook 郵件內文處，直接按下「Ctrl + V (貼上)」然後寄出，這樣絕對不會亂碼。");
-            }, 500);
+            // 開啟新分頁，直接載入 Gmail 寫信視窗
+            window.open(gmailUrl, '_blank');
         }
 
         input.addEventListener('input', updateCount);
