@@ -2,147 +2,73 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Watson 專屬：長文煉金術 v2.2.3</title>
+    <title>Watson 專屬：長文煉金術 v2.2.4</title>
     <style>
-        body { 
-            font-family: "Microsoft JhengHei", sans-serif; 
-            padding: 20px; 
-            background-color: #121212; 
-            color: #e0e0e0; 
-            line-height: 1.6;
-        }
-        #counter { 
-            position: fixed; 
-            top: 20px; 
-            right: 20px; 
-            background: #fbc02d; 
-            color: #000;
-            padding: 10px 15px; 
-            font-weight: bold; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
-            z-index: 100;
-            min-width: 120px;
-            text-align: center;
-        }
-        .control-panel {
-            margin-bottom: 20px;
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #333;
-        }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 14px; }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            background-color: #2c2c2c;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; }
-        button {
-            padding: 12px 24px;
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            transition: 0.2s;
-            font-size: 15px;
-        }
+        body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background-color: #121212; color: #e0e0e0; line-height: 1.6; }
+        #counter { position: fixed; top: 20px; right: 20px; background: #fbc02d; color: #000; padding: 10px 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; min-width: 120px; text-align: center; }
+        .control-panel { margin-bottom: 20px; background-color: #1e1e1e; padding: 20px; border-radius: 10px; border: 1px solid #333; }
+        input[type="text"] { width: 100%; padding: 12px; background-color: #2c2c2c; border: 1px solid #444; color: white; border-radius: 5px; font-size: 16px; box-sizing: border-box; margin-top: 5px; }
+        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 15px; }
+        button { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; font-size: 15px; }
         .copy-btn { background-color: #4caf50; color: white; }
         .dual-btn { background-color: #2196f3; color: white; }
         .save-btn { background-color: #ff9800; color: white; }
         button:hover { opacity: 0.8; transform: translateY(-2px); }
-        
-        textarea { 
-            width: 100%; 
-            height: 60vh; 
-            padding: 15px; 
-            font-size: 18px; 
-            background-color: #1e1e1e; 
-            color: #ffffff; 
-            border: 1px solid #333;
-            border-radius: 10px;
-            box-sizing: border-box;
-            font-family: inherit;
-            resize: vertical;
-        }
+        textarea { width: 100%; height: 60vh; padding: 15px; font-size: 18px; background-color: #1e1e1e; color: #ffffff; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; font-family: inherit; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div id="counter">總字數：0</div>
-    
-    <h2>Watson 知識煉金術：長文轉化台 v2.2.3</h2>
-    
+    <h2>Watson 知識煉金術 v2.2.4</h2>
     <div class="control-panel">
-        <div class="input-group">
-            <label>郵件主旨 (例如：【原始長文】主題 @靈修筆記 #Raw)</label>
-            <input type="text" id="subjectInput" placeholder="請在此輸入主旨...">
-        </div>
-        
+        <label style="color:#aaa; font-size:14px;">郵件主旨 (Email Subject)</label>
+        <input type="text" id="subjectInput" placeholder="請在此輸入主旨...">
         <div class="btn-group">
             <button class="copy-btn" onclick="copyText()">📋 複製文字</button>
-            <button class="dual-btn" onclick="sendToBoth()">📧 一鍵雙寄 (Reader & Evernote)</button>
-            <button class="save-btn" onclick="saveAsTxt()">💾 存成 TXT 檔案</button>
+            <button class="dual-btn" onclick="sendToBoth()">📧 雙寄 (防亂碼模式)</button>
+            <button class="save-btn" onclick="saveAsTxt()">💾 存成 TXT</button>
         </div>
     </div>
-
-    <textarea id="textInput" placeholder="在此貼上 Gemini 轉化後的長文..."></textarea>
+    <textarea id="textInput" placeholder="貼上轉化後的長文..."></textarea>
 
     <script>
         const input = document.getElementById('textInput');
         const counter = document.getElementById('counter');
         const subjectInput = document.getElementById('subjectInput');
-
         const READER_EMAIL = "waston@library.readwise.io";
         const EVERNOTE_EMAIL = "waston130.454d0b8@m.evernote.com";
 
         function updateCount() {
-            const totalLength = input.value.length;
             const selectedText = input.value.substring(input.selectionStart, input.selectionEnd);
-            
             if (selectedText.length > 0) {
                 counter.innerText = '選取字數：' + selectedText.length;
                 counter.style.background = '#00e676';
             } else {
-                counter.innerText = '總字數：' + totalLength;
+                counter.innerText = '總字數：' + input.value.length;
                 counter.style.background = '#fbc02d';
             }
         }
 
-        function copyText() {
+        function copyText(isSilent = false) {
             input.select();
             document.execCommand('copy');
-            alert('文字已成功複製！');
+            if(!isSilent) alert('文字已成功複製！');
         }
 
         function saveAsTxt() {
-            const text = input.value;
-            if(!text) { alert("請先貼入內容"); return; }
-            // 使用帶有 BOM 的 UTF-8 確保 Windows 記事本開啟不亂碼
-            const blob = new Blob(["\ufeff" + text], { type: "text/plain;charset=utf-8" });
+            const blob = new Blob(["\ufeff" + input.value], { type: "text/plain;charset=utf-8" });
             const anchor = document.createElement("a");
-            const fileName = (subjectInput.value || "Watson研讀筆記") + ".txt";
-            anchor.download = fileName;
+            anchor.download = (subjectInput.value || "Watson研讀筆記") + ".txt";
             anchor.href = window.URL.createObjectURL(blob);
             anchor.click();
-            window.URL.revokeObjectURL(anchor.href);
         }
 
         function sendToBoth() {
-            const subject = subjectInput.value || "【原始長文】未命名";
-            const body = input.value;
-            
-            // 使用 encodeURIComponent 確保中文字被正確編碼
-            const mailtoLink = "mailto:" + READER_EMAIL + ";" + EVERNOTE_EMAIL + 
-                               "?subject=" + encodeURIComponent(subject) + 
-                               "&body=" + encodeURIComponent(body);
-            
+            copyText(true); // 先自動複製內容到剪貼簿
+            const subject = encodeURIComponent(subjectInput.value || "【研讀筆記】");
+            // 內文只保留給 Evernote，Reader 部分提醒使用者貼上
+            const bodyHint = encodeURIComponent("--- 內容已自動複製到剪貼簿，請直接在此貼上 (Ctrl+V) 以防止亂碼 ---\n\n" + input.value);
+            const mailtoLink = `mailto:${READER_EMAIL};${EVERNOTE_EMAIL}?subject=${subject}&body=${bodyHint}`;
             window.location.href = mailtoLink;
         }
 
