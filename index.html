@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Watson 專屬：長文煉金術 v3.1</title>
+    <title>Watson 專屬：長文煉金術 v3.2</title>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background-color: #121212; color: #e0e0e0; line-height: 1.6; }
         #counter { position: fixed; top: 20px; right: 20px; background: #fbc02d; color: #000; padding: 10px 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; min-width: 120px; text-align: center; }
@@ -19,13 +19,13 @@
 </head>
 <body>
     <div id="counter">總字數：0</div>
-    <h2>Watson 知識煉金術 v3.1</h2>
+    <h2>Watson 知識煉金術 v3.2</h2>
     <div class="control-panel">
         <label style="color:#aaa; font-size:14px;">郵件主旨 (例如：【原始長文】主題 @靈修筆記 #Raw)</label>
         <input type="text" id="subjectInput" placeholder="請在此輸入主旨...">
         <div class="btn-group">
             <button class="copy-btn" onclick="copyText(false)">📋 複製文字</button>
-            <button class="gmail-btn" onclick="sendViaGmailAPI()">📧 Gmail 雲端直寄 (防 400 錯誤版)</button>
+            <button class="gmail-btn" onclick="sendViaGmailAPI()">📧 副帳號發送 (防亂碼 + 分流)</button>
             <button class="save-btn" onclick="saveAsTxt()">💾 存成 TXT</button>
         </div>
     </div>
@@ -36,8 +36,12 @@
         const counter = document.getElementById('counter');
         const subjectInput = document.getElementById('subjectInput');
         
+        // 收件人設定
         const READER_EMAIL = "waston@library.readwise.io";
         const EVERNOTE_EMAIL = "waston130.454d0b8@m.evernote.com";
+        
+        // 💡 瓦森，請把下面這行引號內的文字，換成你的「副帳號 Gmail」
+        const MY_SENDER_EMAIL = "waston1140620@gmail.com"; 
 
         function updateCount() {
             const selectedText = input.value.substring(input.selectionStart, input.selectionEnd);
@@ -69,21 +73,18 @@
         function sendViaGmailAPI() {
             if(!input.value) { alert("請先貼入內容喔！"); return; }
             
-            // 1. 自動把所有長文複製到剪貼簿，不放進網址
             copyText(true); 
             
-            // 2. 網址只帶入收件人與主旨，保證長度極短，絕對不會出現 Error 400
             const to = encodeURIComponent(READER_EMAIL + "," + EVERNOTE_EMAIL);
             const subject = encodeURIComponent(subjectInput.value || "【研讀筆記】未命名");
             
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}`;
+            // 核心機制：加入 authuser 參數，強制使用指定的副帳號發信
+            const gmailUrl = `https://mail.google.com/mail/?authuser=${MY_SENDER_EMAIL}&view=cm&fs=1&to=${to}&su=${subject}`;
             
-            // 3. 開啟 Gmail 分頁
             window.open(gmailUrl, '_blank');
             
-            // 4. 溫馨提醒
             setTimeout(() => {
-                alert("✅ 內容已自動複製！\n\n請在跳出的 Gmail 寫信視窗內，點擊空白內文處並按下「Ctrl + V (貼上)」即可寄出！");
+                alert("✅ 內容已自動複製！\n\n請在跳出的 Gmail 寫信視窗內，按下「Ctrl + V (貼上)」即可用副帳號寄出！");
             }, 500);
         }
 
