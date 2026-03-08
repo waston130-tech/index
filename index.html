@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Watson 專屬：長文煉金術 v2.2.2</title>
+    <title>Watson 專屬：長文煉金術 v2.2.3</title>
     <style>
         body { 
             font-family: "Microsoft JhengHei", sans-serif; 
@@ -32,9 +32,7 @@
             border-radius: 10px;
             border: 1px solid #333;
         }
-        .input-group {
-            margin-bottom: 15px;
-        }
+        .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; color: #aaa; font-size: 14px; }
         input[type="text"] {
             width: 100%;
@@ -46,11 +44,7 @@
             font-size: 16px;
             box-sizing: border-box;
         }
-        .btn-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; }
         button {
             padding: 12px 24px;
             cursor: pointer;
@@ -83,7 +77,7 @@
 <body>
     <div id="counter">總字數：0</div>
     
-    <h2>Watson 知識煉金術：長文轉化台 v2.2.2</h2>
+    <h2>Watson 知識煉金術：長文轉化台 v2.2.3</h2>
     
     <div class="control-panel">
         <div class="input-group">
@@ -114,10 +108,10 @@
             
             if (selectedText.length > 0) {
                 counter.innerText = '選取字數：' + selectedText.length;
-                counter.style.background = '#00e676'; // 選取時變綠色提醒
+                counter.style.background = '#00e676';
             } else {
                 counter.innerText = '總字數：' + totalLength;
-                counter.style.background = '#fbc02d'; // 平時維持黃色
+                counter.style.background = '#fbc02d';
             }
         }
 
@@ -130,7 +124,8 @@
         function saveAsTxt() {
             const text = input.value;
             if(!text) { alert("請先貼入內容"); return; }
-            const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+            // 使用帶有 BOM 的 UTF-8 確保 Windows 記事本開啟不亂碼
+            const blob = new Blob(["\ufeff" + text], { type: "text/plain;charset=utf-8" });
             const anchor = document.createElement("a");
             const fileName = (subjectInput.value || "Watson研讀筆記") + ".txt";
             anchor.download = fileName;
@@ -140,17 +135,20 @@
         }
 
         function sendToBoth() {
-            const subject = encodeURIComponent(subjectInput.value || "【原始長文】未命名");
-            const body = encodeURIComponent(input.value);
-            const mailtoLink = `mailto:${READER_EMAIL};${EVERNOTE_EMAIL}?subject=${subject}&body=${body}`;
+            const subject = subjectInput.value || "【原始長文】未命名";
+            const body = input.value;
+            
+            // 使用 encodeURIComponent 確保中文字被正確編碼
+            const mailtoLink = "mailto:" + READER_EMAIL + ";" + EVERNOTE_EMAIL + 
+                               "?subject=" + encodeURIComponent(subject) + 
+                               "&body=" + encodeURIComponent(body);
+            
             window.location.href = mailtoLink;
         }
 
-        // 全面監聽各種滑鼠與鍵盤動作，確保計數即時觸發
         input.addEventListener('input', updateCount);
         input.addEventListener('mouseup', updateCount);
         input.addEventListener('keyup', updateCount);
-        input.addEventListener('mousemove', (e) => { if (e.buttons === 1) updateCount(); });
     </script>
 </body>
 </html>
