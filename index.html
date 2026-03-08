@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Watson 專屬：長文煉金術 v3.2</title>
+    <title>Watson 專屬：長文煉金術 v3.3</title>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background-color: #121212; color: #e0e0e0; line-height: 1.6; }
         #counter { position: fixed; top: 20px; right: 20px; background: #fbc02d; color: #000; padding: 10px 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; min-width: 120px; text-align: center; }
@@ -13,13 +13,14 @@
         .copy-btn { background-color: #4caf50; color: white; }
         .gmail-btn { background-color: #ea4335; color: white; }
         .save-btn { background-color: #ff9800; color: white; }
+        .clear-btn { background-color: #f44336; color: white; margin-left: auto; } /* 靠右對齊，避免誤觸 */
         button:hover { opacity: 0.8; transform: translateY(-2px); }
         textarea { width: 100%; height: 60vh; padding: 15px; font-size: 18px; background-color: #1e1e1e; color: #ffffff; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; font-family: inherit; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div id="counter">總字數：0</div>
-    <h2>Watson 知識煉金術 v3.2</h2>
+    <h2>Watson 知識煉金術 v3.3</h2>
     <div class="control-panel">
         <label style="color:#aaa; font-size:14px;">郵件主旨 (例如：【原始長文】主題 @靈修筆記 #Raw)</label>
         <input type="text" id="subjectInput" placeholder="請在此輸入主旨...">
@@ -27,6 +28,7 @@
             <button class="copy-btn" onclick="copyText(false)">📋 複製文字</button>
             <button class="gmail-btn" onclick="sendViaGmailAPI()">📧 副帳號發送 (防亂碼 + 分流)</button>
             <button class="save-btn" onclick="saveAsTxt()">💾 存成 TXT</button>
+            <button class="clear-btn" onclick="clearAll()">🗑️ 一鍵清空</button>
         </div>
     </div>
     <textarea id="textInput" placeholder="在此貼上 Gemini 轉化後的長文..."></textarea>
@@ -40,7 +42,7 @@
         const READER_EMAIL = "waston@library.readwise.io";
         const EVERNOTE_EMAIL = "waston130.454d0b8@m.evernote.com";
         
-        // 💡 瓦森，請把下面這行引號內的文字，換成你的「副帳號 Gmail」
+        // 💡 記得替換成你的副帳號
         const MY_SENDER_EMAIL = "waston1140620@gmail.com"; 
 
         function updateCount() {
@@ -78,14 +80,23 @@
             const to = encodeURIComponent(READER_EMAIL + "," + EVERNOTE_EMAIL);
             const subject = encodeURIComponent(subjectInput.value || "【研讀筆記】未命名");
             
-            // 核心機制：加入 authuser 參數，強制使用指定的副帳號發信
             const gmailUrl = `https://mail.google.com/mail/?authuser=${MY_SENDER_EMAIL}&view=cm&fs=1&to=${to}&su=${subject}`;
-            
             window.open(gmailUrl, '_blank');
             
             setTimeout(() => {
-                alert("✅ 內容已自動複製！\n\n請在跳出的 Gmail 寫信視窗內，按下「Ctrl + V (貼上)」即可用副帳號寄出！");
+                alert("✅ 內容已自動複製！\n\n請在跳出的 Gmail 寫信視窗內，按下「Ctrl + V (貼上)」即可寄出！");
             }, 500);
+        }
+
+        // 新增：一鍵清空功能
+        function clearAll() {
+            if (input.value === "" && subjectInput.value === "") return; // 本來就空的就不理它
+            
+            if (confirm("確定要清空目前的內容與主旨嗎？")) {
+                input.value = "";
+                subjectInput.value = "";
+                updateCount(); // 重置字數統計
+            }
         }
 
         input.addEventListener('input', updateCount);
