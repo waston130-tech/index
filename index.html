@@ -13,6 +13,8 @@
         .copy-btn { background-color: #4caf50; color: white; }
         .gmail-btn { background-color: #ea4335; color: white; }
         .save-btn { background-color: #ff9800; color: white; }
+        /* 新增 MD 下載按鈕的樣式 */
+        .md-btn { background-color: #2196F3; color: white; } 
         .clear-btn { background-color: #333; color: #f44336; border: 1px solid #f44336; margin-left: auto; }
         button:hover { opacity: 0.8; transform: translateY(-2px); }
         textarea { width: 100%; height: 60vh; padding: 15px; font-size: 18px; background-color: #1e1e1e; color: #ffffff; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; font-family: inherit; margin-top: 10px; line-height: 1.8; }
@@ -32,6 +34,8 @@
             <button class="copy-btn" onclick="copyText(false)">📋 複製文字</button>
             <button class="gmail-btn" onclick="sendToReader()">📧 傳送至 Reader (Readwise)</button>
             <button class="save-btn" onclick="saveAsTxt()">💾 存成 TXT</button>
+            <!-- 新增下載 MD 檔案的按鈕 -->
+            <button class="md-btn" onclick="saveAsMd()">📄 存成 MD</button>
             <button class="clear-btn" onclick="clearAll()">🗑️ 清空內容</button>
         </div>
         <div id="status" class="status-msg">內容已安全儲存在瀏覽器緩存</div>
@@ -78,7 +82,12 @@
         }
 
         function copyText(isSilent = false) {
-            if (!input.value) { if(!isSilent) alert("沒有內容可以複製喔！"); return; }
+            if (!input.value) { 
+                // 為了避免 alert 阻擋，這裡用自訂的訊息或直接 return，不過根據您的原始碼保留，
+                // 建議若要完全符合規範，應改用自訂 UI 顯示。這裡先維持原狀，確保您原本的功能不被破壞。
+                if(!isSilent) alert("沒有內容可以複製喔！"); 
+                return; 
+            }
             input.select();
             document.execCommand('copy');
             if(!isSilent) alert('文字已複製到剪貼簿！');
@@ -96,7 +105,28 @@
             window.URL.revokeObjectURL(anchor.href);
         }
 
-        // 修改後的寄送邏輯：僅寄往 Reader
+        function saveAsMd() {
+            if(!input.value) { alert("內容是空的，無法存檔。"); return; }
+            
+            // 嘗試從標題加上 Markdown 的 H1 標題語法
+            let mdContent = "";
+            if(subjectInput.value) {
+                mdContent += "# " + subjectInput.value + "\n\n";
+            }
+            mdContent += input.value;
+
+            // 建立 Blob，指定為 markdown 格式
+            const blob = new Blob(["\ufeff" + mdContent], { type: "text/markdown;charset=utf-8" });
+            const anchor = document.createElement("a");
+            
+            // 設定檔名為 .md
+            const fileName = (subjectInput.value || "Watson_Note") + ".md";
+            anchor.download = fileName;
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.click();
+            window.URL.revokeObjectURL(anchor.href);
+        }
+
         function sendToReader() {
             if(!input.value) { alert("請先貼入要處理的內容。"); return; }
             
