@@ -1,41 +1,20 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <title>Watson 專屬：長文煉金術 v3.6 (精簡版)</title>
-    <style>
-        body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background-color: #121212; color: #e0e0e0; line-height: 1.6; }
-        #counter { position: fixed; top: 20px; right: 20px; background: #fbc02d; color: #000; padding: 10px 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; min-width: 120px; text-align: center; transition: 0.3s; }
-        .control-panel { margin-bottom: 20px; background-color: #1e1e1e; padding: 20px; border-radius: 10px; border: 1px solid #333; }
-        input[type="text"] { width: 100%; padding: 12px; background-color: #2c2c2c; border: 1px solid #444; color: white; border-radius: 5px; font-size: 16px; box-sizing: border-box; margin-top: 5px; }
-        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 15px; }
-        button { padding: 12px 24px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-        .copy-btn { background-color: #4caf50; color: white; }
-        .gmail-btn { background-color: #ea4335; color: white; }
+<!-- ... existing code ... -->
         .save-btn { background-color: #ff9800; color: white; }
         /* 新增 MD 下載按鈕的樣式 */
         .md-btn { background-color: #2196F3; color: white; } 
+        /* 新增 EPUB 下載按鈕的樣式 */
+        .epub-btn { background-color: #9c27b0; color: white; }
         .clear-btn { background-color: #333; color: #f44336; border: 1px solid #f44336; margin-left: auto; }
         button:hover { opacity: 0.8; transform: translateY(-2px); }
-        textarea { width: 100%; height: 60vh; padding: 15px; font-size: 18px; background-color: #1e1e1e; color: #ffffff; border: 1px solid #333; border-radius: 10px; box-sizing: border-box; font-family: inherit; margin-top: 10px; line-height: 1.8; }
-        .status-msg { font-size: 12px; color: #666; margin-top: 8px; text-align: right; }
-    </style>
-</head>
-<body>
-    <div id="counter">總字數：0</div>
-    
-    <h2>Watson 知識煉金術 v3.6</h2>
-    
-    <div class="control-panel">
-        <label style="color:#aaa; font-size:14px;">文章標題 (Reader 將以此命名)</label>
-        <input type="text" id="subjectInput" placeholder="在此輸入主旨，例如：【逐字稿】講道標題">
-        
+<!-- ... existing code ... -->
         <div class="btn-group">
             <button class="copy-btn" onclick="copyText(false)">📋 複製文字</button>
             <button class="gmail-btn" onclick="sendToReader()">📧 傳送至 Reader (Readwise)</button>
             <button class="save-btn" onclick="saveAsTxt()">💾 存成 TXT</button>
             <!-- 新增下載 MD 檔案的按鈕 -->
             <button class="md-btn" onclick="saveAsMd()">📄 存成 MD</button>
+            <!-- 新增下載 EPUB 檔案的按鈕 -->
+            <button class="epub-btn" onclick="saveAsEpub()">📖 存成 EPUB</button>
             <button class="clear-btn" onclick="clearAll()">🗑️ 清空內容</button>
         </div>
         <div id="status" class="status-msg">內容已安全儲存在瀏覽器緩存</div>
@@ -43,122 +22,131 @@
 
     <textarea id="textInput" placeholder="在此貼上長文內容..."></textarea>
 
+    <!-- 引入 marked.js 解析 Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 引入 JSZip 函式庫以產生 EPUB (ZIP) 檔案 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <script>
         const input = document.getElementById('textInput');
-        const counter = document.getElementById('counter');
-        const subjectInput = document.getElementById('subjectInput');
-        const statusMsg = document.getElementById('status');
+<!-- ... existing code ... -->
+        const fileName = (subjectInput.value || "Watson_Note") + ".md";
+        anchor.download = fileName;
+        anchor.href = window.URL.createObjectURL(blob);
+        anchor.click();
+        window.URL.revokeObjectURL(anchor.href);
+    }
+
+    async function saveAsEpub() {
+        if(!input.value) { alert("內容是空的，無法存檔。"); return; }
+        if (typeof JSZip === 'undefined' || typeof marked === 'undefined') { 
+            alert("系統載入中或無法連線，請稍後再試。"); return; 
+        }
+
+        const title = subjectInput.value || "Watson 筆記";
+        const uuid = crypto.randomUUID ? crypto.randomUUID() : 'xxxx-xxxx-xxxx'.replace(/[x]/g, () => (Math.random()*16|0).toString(16));
         
-        // 核心帳號設定 (僅保留 Reader)
-        const READER_EMAIL = "waston@library.readwise.io";
-        const MY_SENDER_EMAIL = "waston1140620@gmail.com"; 
+        // 1. 使用 marked.js 將 MD 語法轉換為 HTML
+        const mdHtml = marked.parse(input.value);
 
-        window.onload = () => {
-            const savedText = localStorage.getItem('watson_backup_text');
-            const savedSubject = localStorage.getItem('watson_backup_subject');
-            if (savedText) input.value = savedText;
-            if (savedSubject) subjectInput.value = savedSubject;
-            updateCount();
-        };
+        // 2. 建立包含電子書專用 CSS 的 HTML 樣板
+        const htmlTemplate = `<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8" />
+            <title>${title}</title>
+            <style>
+                body { font-family: sans-serif; line-height: 1.6; padding: 1em; color: #000; background: #fff; }
+                h1, h2, h3, h4, h5, h6 { color: #222; margin-top: 1.2em; margin-bottom: 0.5em; }
+                p { margin-bottom: 1em; }
+                /* 表格樣式優化 */
+                table { border-collapse: collapse; width: 100%; margin-bottom: 1.5em; font-size: 0.9em; }
+                th, td { border: 1px solid #888; padding: 8px 10px; text-align: left; }
+                th { background-color: #f4f4f4; font-weight: bold; }
+                /* 其他 Markdown 元素樣式 */
+                blockquote { border-left: 4px solid #ccc; margin: 1em 0; padding-left: 1em; color: #555; background: #fafafa; padding-top: 0.5em; padding-bottom: 0.5em;}
+                img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
+                code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+                pre { background: #f4f4f4; padding: 1em; overflow-x: auto; border-radius: 6px; }
+                pre code { background: transparent; padding: 0; }
+                ul, ol { margin-bottom: 1em; padding-left: 2em; }
+            </style>
+        </head>
+        <body>
+            ${mdHtml}
+        </body>
+        </html>`;
 
-        function autoSave() {
-            localStorage.setItem('watson_backup_text', input.value);
-            localStorage.setItem('watson_backup_subject', subjectInput.value);
-            statusMsg.innerText = "上次存檔： " + new Date().toLocaleTimeString();
-        }
+        // 3. EPUB 需要嚴格的 XML (XHTML)，使用瀏覽器原生的 Parser 來確保標籤閉合 (如 <br/>, <img/>)
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlTemplate, "text/html");
+        const serializer = new XMLSerializer();
+        let xhtmlContent = serializer.serializeToString(doc);
 
-        function updateCount() {
-            const totalLength = input.value.length;
-            const selectedText = input.value.substring(input.selectionStart, input.selectionEnd);
-            
-            if (selectedText.length > 0) {
-                counter.innerText = '選取字數：' + selectedText.length;
-                counter.style.background = '#00e676';
-            } else {
-                counter.innerText = '總字數：' + totalLength;
-                counter.style.background = '#fbc02d';
-            }
-            autoSave();
-        }
+        // 補上 EPUB 需要的 xmlns 命名空間與 XML 宣告
+        xhtmlContent = xhtmlContent.replace('<html', '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="zh-TW"');
+        xhtmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE html>\n` + xhtmlContent;
 
-        function copyText(isSilent = false) {
-            if (!input.value) { 
-                // 為了避免 alert 阻擋，這裡用自訂的訊息或直接 return，不過根據您的原始碼保留，
-                // 建議若要完全符合規範，應改用自訂 UI 顯示。這裡先維持原狀，確保您原本的功能不被破壞。
-                if(!isSilent) alert("沒有內容可以複製喔！"); 
-                return; 
-            }
-            input.select();
-            document.execCommand('copy');
-            if(!isSilent) alert('文字已複製到剪貼簿！');
-            window.getSelection().removeAllRanges();
-        }
+        const zip = new JSZip();
+        
+        // 1. mimetype (STORE 模式)
+        zip.file("mimetype", "application/epub+zip", {compression: "STORE"});
+        
+        // 2. META-INF/container.xml
+        zip.folder("META-INF").file("container.xml", `<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+<rootfiles>
+    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+</rootfiles>
+</container>`);
 
-        function saveAsTxt() {
-            if(!input.value) { alert("內容是空的，無法存檔。"); return; }
-            const blob = new Blob(["\ufeff" + input.value], { type: "text/plain;charset=utf-8" });
+        // 3. OEBPS folder
+        const oebps = zip.folder("OEBPS");
+        
+        // 升級至 EPUB 3.0 標準
+        oebps.file("content.opf", `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="3.0">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>${title}</dc:title>
+    <dc:language>zh-TW</dc:language>
+    <dc:identifier id="BookId">urn:uuid:${uuid}</dc:identifier>
+</metadata>
+<manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="content" href="content.xhtml" media-type="application/xhtml+xml"/>
+</manifest>
+<spine toc="ncx">
+    <itemref idref="content"/>
+</spine>
+</package>`);
+
+        oebps.file("toc.ncx", `<?xml version="1.0" encoding="UTF-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+<head><meta name="dtb:uid" content="urn:uuid:${uuid}"/></head>
+<docTitle><text>${title}</text></docTitle>
+<navMap>
+    <navPoint id="navPoint-1" playOrder="1">
+        <navLabel><text>${title}</text></navLabel>
+        <content src="content.xhtml"/>
+    </navPoint>
+</navMap>
+</ncx>`);
+
+        // 將轉換過且樣式美化後的 xhtml 寫入
+        oebps.file("content.xhtml", xhtmlContent);
+
+        // 打包產生檔案並自動下載
+        try {
+            const content = await zip.generateAsync({type:"blob", mimeType:"application/epub+zip"});
             const anchor = document.createElement("a");
-            const fileName = (subjectInput.value || "Watson_Note") + ".txt";
-            anchor.download = fileName;
-            anchor.href = window.URL.createObjectURL(blob);
+            anchor.download = title + ".epub";
+            anchor.href = window.URL.createObjectURL(content);
             anchor.click();
             window.URL.revokeObjectURL(anchor.href);
+        } catch (err) {
+            alert("產生 EPUB 時發生錯誤：" + err.message);
         }
+    }
 
-        function saveAsMd() {
-            if(!input.value) { alert("內容是空的，無法存檔。"); return; }
-            
-            // 嘗試從標題加上 Markdown 的 H1 標題語法
-            let mdContent = "";
-            if(subjectInput.value) {
-                mdContent += "# " + subjectInput.value + "\n\n";
-            }
-            mdContent += input.value;
-
-            // 建立 Blob，指定為 markdown 格式
-            const blob = new Blob(["\ufeff" + mdContent], { type: "text/markdown;charset=utf-8" });
-            const anchor = document.createElement("a");
-            
-            // 設定檔名為 .md
-            const fileName = (subjectInput.value || "Watson_Note") + ".md";
-            anchor.download = fileName;
-            anchor.href = window.URL.createObjectURL(blob);
-            anchor.click();
-            window.URL.revokeObjectURL(anchor.href);
-        }
-
-        function sendToReader() {
-            if(!input.value) { alert("請先貼入要處理的內容。"); return; }
-            
-            copyText(true); 
-            
-            const to = encodeURIComponent(READER_EMAIL);
-            const subject = encodeURIComponent(subjectInput.value || "【煉金產出】未命名");
-            
-            const gmailUrl = `https://mail.google.com/mail/?authuser=${MY_SENDER_EMAIL}&view=cm&fs=1&to=${to}&su=${subject}`;
-            
-            window.open(gmailUrl, '_blank');
-            
-            setTimeout(() => {
-                alert("✅ 內容已自動複製！\n\n請在 Gmail 視窗直接貼上並寄出，這篇文章將會進入你的 Reader 待讀清單。");
-            }, 300);
-        }
-
-        function clearAll() {
-            if (input.value === "" && subjectInput.value === "") return;
-            if (confirm("確定要清空目前的內容嗎？")) {
-                input.value = "";
-                subjectInput.value = "";
-                localStorage.removeItem('watson_backup_text');
-                localStorage.removeItem('watson_backup_subject');
-                updateCount();
-            }
-        }
-
-        input.addEventListener('input', updateCount);
-        input.addEventListener('mouseup', updateCount);
-        input.addEventListener('keyup', updateCount);
-        subjectInput.addEventListener('input', autoSave);
-    </script>
-</body>
-</html>
+    function sendToReader() {
+<!-- ... existing code ... -->
